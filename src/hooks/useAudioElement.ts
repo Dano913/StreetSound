@@ -8,6 +8,7 @@ export interface UseAudioElementProps {
   volume: number;
   onNext: () => void;
   onSeek: (time: number) => void;
+  isLoop?: boolean; // ← AGREGADO
 }
 
 export const useAudioElement = ({
@@ -17,6 +18,7 @@ export const useAudioElement = ({
   volume,
   onNext,
   onSeek,
+  isLoop, // ← AGREGADO
 }: UseAudioElementProps) => {
 
   useEffect(() => {
@@ -26,10 +28,16 @@ export const useAudioElement = ({
     // Establecemos la fuente y volumen
     audio.src = currentSong ? currentSong.url ?? currentSong.src ?? '' : '';
     audio.volume = volume;
+    audio.loop = isLoop || false; // ← CONFIGURAR LOOP AQUÍ
 
     // Manejadores de eventos
     const handleEnded = () => {
-      onNext(); // Cambia a la siguiente canción
+      // Solo avanzar a la siguiente si NO está en modo loop
+      if (!isLoop) {
+        onNext(); // Cambia a la siguiente canción
+      }
+      // Si isLoop está activo, el navegador automáticamente
+      // reiniciará la canción porque audio.loop = true
     };
 
     const handleTimeUpdate = () => {
@@ -52,5 +60,5 @@ export const useAudioElement = ({
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
     };
-  }, [currentSong, isPlaying, volume, onNext, onSeek]);
+  }, [currentSong, isPlaying, volume, onNext, onSeek, isLoop]); // ← isLoop en dependencias
 };

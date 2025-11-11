@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FolderSelector } from './components/FolderSelector';
 import { SongList } from './components/SongList';
 import { Player } from './components/Player';
@@ -15,6 +15,7 @@ function App() {
   const [isShuffle, setIsShuffle] = useState(false);
   const [currentPlaylist, setCurrentPlaylist] = useState<string | null>(null);
   const { isDark, toggleTheme } = useTheme();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const playedSongsRef = useRef<Set<string>>(new Set());
   const currentSongsRef = useRef<Song[]>([]);
@@ -58,16 +59,19 @@ function App() {
     }
   }, []);
 
+  // ✅ USAR isLoop y toggleLoop del hook
   const {
     currentSong,
     isPlaying,
     currentTime,
     duration,
     volume,
+    isLoop,        // ← OBTENER del hook
     playSong,
     togglePlayPause,
     seek,
     changeVolume,
+    toggleLoop,    // ← OBTENER del hook
   } = useAudioPlayer(handleNext);
 
   useEffect(() => {
@@ -94,46 +98,42 @@ function App() {
     [playSong]
   );
 
-  /**
-   * ✅ Carga canciones y busca carátulas en src/assets/[carpeta]/[carpeta].jpg
-   */
   const handleSongsLoaded = useCallback(
-  (loadedSongs: Song[]) => {
-    if (!loadedSongs.length) return;
+    (loadedSongs: Song[]) => {
+      if (!loadedSongs.length) return;
 
-    const updatedSongs = loadedSongs.map((song: Song) => {
-      const file = (song as any).file;
-      if (!file) return song;
+      const updatedSongs = loadedSongs.map((song: Song) => {
+        const file = (song as any).file;
+        if (!file) return song;
 
-      const path = file.webkitRelativePath || file.name;
-      const parts = path.split('/');
-      const folderName = parts[parts.length - 2] || '';
+        const path = file.webkitRelativePath || file.name;
+        const parts = path.split('/');
+        const folderName = parts[parts.length - 2] || '';
 
-      // Intentar importar la carátula desde src/assets
-      let cover: string | undefined;
-      try {
-        const coverPath = `./assets/covers/${folderName}.jpg`;
-        console.log('🔍 Buscando carátula en:', coverPath);
+        let cover: string | undefined;
+        try {
+          const coverPath = `./assets/covers/${folderName}.jpg`;
+          console.log('🔍 Buscando carátula en:', coverPath);
 
-        cover = new URL(coverPath, import.meta.url).href;
-        console.log('✅ Carátula encontrada:', cover);
-      } catch (err) {
-        console.warn('❌ No se encontró carátula para', folderName);
-        cover = undefined;
+          cover = new URL(coverPath, import.meta.url).href;
+          console.log('✅ Carátula encontrada:', cover);
+        } catch (err) {
+          console.warn('❌ No se encontró carátula para', folderName);
+          cover = undefined;
+        }
+
+        return { ...song, cover };
+      });
+
+      setSongs(updatedSongs);
+      console.log('🎵 Canciones con carátulas:', updatedSongs);
+
+      if (updatedSongs.length > 0 && !currentSong) {
+        playAndMark(updatedSongs[0]);
       }
-
-      return { ...song, cover };
-    });
-
-    setSongs(updatedSongs);
-    console.log('🎵 Canciones con carátulas:', updatedSongs);
-
-    if (updatedSongs.length > 0 && !currentSong) {
-      playAndMark(updatedSongs[0]);
-    }
-  },
-  [currentSong, playAndMark]
-);
+    },
+    [currentSong, playAndMark]
+  );
 
   const handlePrevious = useCallback(() => {
     const currentIndex = currentSongs.findIndex((s) => s.id === currentSong?.id);
@@ -204,6 +204,12 @@ function App() {
     [setPlaylists]
   );
 
+  // ❌ ELIMINAR estas líneas - ya no las necesitas
+  // const [isLoop, setIsLoop] = useState(false);
+  // const handleToggleLoop = useCallback((enabled: boolean) => {
+  //   setIsLoop(enabled);
+  // }, []);
+
   useEffect(() => {
     document.title = currentSong
       ? `${currentSong.name} - Reproductor de Música`
@@ -214,23 +220,36 @@ function App() {
     <div
       className={`min-h-screen flex flex-col transition-colors ${
         isDark
-          ? 'bg-gradient-to-br from-gray-900 to-gray-800'
-          : 'bg-gradient-to-br from-gray-50 to-gray-100'
+          ? 'bg-gray-800'
+          : 'bg-gray-50'
       }`}
     >
       <header
-        className={`shadow-md border-b-2 px-6 py-4 transition-colors ${
-          isDark ? 'bg-gray-800 border-b-gray-700' : 'bg-white border-b-gray-200'
+        className={`shadow-md px-6 py-4 transition-colors ${
+          isDark ? 'bg-gray-900' : 'bg-white'
         }`}
       >
         <div className="flex items-center justify-between border-1 border-red-500">
-          <h1
-            className={`text-2xl font-bold ${
-              isDark ? 'text-gray-100' : 'text-gray-800'
-            }`}
-          >
-            Reproductor de Música
-          </h1>
+          <div className="flex gap-5">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className={`p-2 rounded-full shadow-md transition-all ${
+                isDark
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-100'
+                  : 'bg-white hover:bg-gray-100 text-gray-800'
+              }`}
+              title={isSidebarOpen ? 'Ocultar playlists' : 'Mostrar playlists'}
+            >
+              {isSidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+            </button>
+            <h1
+              className={`text-2xl font-bold ${
+                isDark ? 'text-gray-100' : 'text-gray-800'
+              }`}
+            >
+              StreetSound
+            </h1>
+          </div>
           <div className="flex gap-4">
             <FolderSelector onSongsLoaded={handleSongsLoaded} />
             <button
@@ -248,32 +267,34 @@ function App() {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         <aside
-          className={`w-80 p-4 border-r overflow-y-auto transition-colors ${
-            isDark ? 'bg-gray-800 border-r-gray-700' : 'bg-gray-50 border-r-gray-200'
-          }`}
+          className={`w-80 p-3 overflow-y-auto h-[680px] border-1 transition-all duration-300 ${
+            isSidebarOpen ? 'opacity-100' : 'w-0 p-0 opacity-0'
+          } ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}
         >
-          <PlaylistPanel
-            playlists={playlists}
-            songs={songs}
-            currentPlaylist={currentPlaylist}
-            onCreatePlaylist={handleCreatePlaylist}
-            onSelectPlaylist={setCurrentPlaylist}
-            onRenamePlaylist={handleRenamePlaylist}
-            onDeletePlaylist={handleDeletePlaylist}
-            onRemoveSongFromPlaylist={handleRemoveSongFromPlaylist}
-            isDark={isDark}
-          />
+          {isSidebarOpen && (
+            <PlaylistPanel
+              playlists={playlists}
+              songs={songs}
+              currentPlaylist={currentPlaylist}
+              onCreatePlaylist={handleCreatePlaylist}
+              onSelectPlaylist={setCurrentPlaylist}
+              onRenamePlaylist={handleRenamePlaylist}
+              onDeletePlaylist={handleDeletePlaylist}
+              onRemoveSongFromPlaylist={handleRemoveSongFromPlaylist}
+              isDark={isDark}
+            />
+          )}
         </aside>
 
         <main
-          className="flex-1 p-6 overflow-y-auto transition-colors"
-          style={{ paddingBottom: '140px' }}
+          className="flex-1 p-3 overflow-y-auto h-[680px] border-1 border-yellow-500 transition-colors"
+          style={{ paddingBottom: '' }}
         >
           <div
-            className={`rounded-lg shadow-lg p-6 transition-colors ${
-              isDark ? 'bg-gray-800' : 'bg-white'
+            className={`h-[100%] border-1 border-green-500 rounded-xl overflow-hidden shadow-lg p-3 transition-colors ${
+              isDark ? 'bg-gray-900' : 'bg-white'
             }`}
           >
             <div className="flex items-center justify-between mb-4">
@@ -307,7 +328,7 @@ function App() {
         </main>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0">
+      <div className="fixed bottom-0 left-0 right-0 border-1">
         <Player
           currentSong={currentSong}
           isPlaying={isPlaying}
@@ -320,7 +341,8 @@ function App() {
           onNext={handleNext}
           onPrevious={handlePrevious}
           onToggleShuffle={handleToggleShuffle}
-          isDark={isDark}
+          isLoop={isLoop}           // ← Del hook
+          onToggleLoop={toggleLoop} // ← Del hook
         />
       </div>
     </div>

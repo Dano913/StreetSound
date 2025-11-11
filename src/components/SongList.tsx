@@ -19,7 +19,8 @@ export const SongList = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 border-q border-red-500 rounded-xl h-[585px] overflow-y-scroll overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+
       {songs.length === 0 ? (
         <div className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
           <Music size={48} className={`mx-auto mb-2 ${isDark ? 'text-gray-600' : 'text-gray-400'} opacity-50`} />
@@ -52,7 +53,7 @@ export const SongList = ({
                 )}
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium truncate ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
-                    {song.name}
+                    {song.name.replace(/\.[^/.]+$/, '')}
                   </p>
                   <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                     {formatDuration(song.duration)}

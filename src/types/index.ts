@@ -34,7 +34,8 @@ export interface PlayerProps {
   onNext: () => void;
   onPrevious: () => void;
   onToggleShuffle?: (enabled: boolean) => void;
-  isDark?: boolean;
+  isLoop?: boolean;
+  onToggleLoop?: (value: boolean) => void;
 }
 
 export interface UseAudioElementProps {
