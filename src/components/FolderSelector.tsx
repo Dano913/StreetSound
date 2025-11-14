@@ -29,6 +29,11 @@ export const FolderSelector = ({ onSongsLoaded }: FolderSelectorProps) => {
         const url = URL.createObjectURL(file);
         const audio = new Audio(url);
 
+        const pathParts = file.webkitRelativePath.split('/');
+        const folderName = pathParts.length > 2 
+          ? pathParts[pathParts.length - 2]  // Carpeta inmediata
+          : pathParts[0];   
+
         await new Promise<void>((resolve) => {
           audio.addEventListener('loadedmetadata', () => {
             audioFiles.push({
@@ -38,6 +43,7 @@ export const FolderSelector = ({ onSongsLoaded }: FolderSelectorProps) => {
               url,
               duration: audio.duration,
               cover: coverPath,
+              folder: folderName
             });
             resolve();
           });

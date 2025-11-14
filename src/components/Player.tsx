@@ -93,7 +93,7 @@ export const Player = ({
           >
             <span>{formatTime(currentTime)}</span>
             <div
-              className={`flex-1 h-2 rounded-full cursor-pointer ${
+              className={`flex-1 h-2 rounded-full cursor-pointer transition-colors ${
                 isDark ? 'bg-gray-700' : 'bg-gray-200'
               }`}
               onClick={(e) => {
@@ -104,7 +104,7 @@ export const Player = ({
               }}
             >
               <div
-                className={`h-full rounded-full transition-all ${
+                className={`h-full rounded-full transition-colors ${
                   isDark ? 'bg-blue-500' : 'bg-blue-600'
                 }`}
                 style={{ width: `${progress}%` }}
@@ -148,7 +148,7 @@ export const Player = ({
             <button
               onClick={onPlayPause}
               disabled={!currentSong}
-              className={`relative flex items-center justify-center w-12 h-12 rounded-full text-white transition-all duration-200
+              className={`relative flex items-center justify-center w-12 h-12 rounded-full text-white transition-colors duration-200
                 ${isPlaying ? 'scale-60' : 'scale-60'}
                 ${isDark ? 'bg-blue-600 hover:bg-blue-500' : 'bg-blue-600 hover:bg-blue-700'}
                 disabled:bg-gray-500 disabled:cursor-not-allowed`}
@@ -208,7 +208,7 @@ export const Player = ({
               step="0.01"
               value={volume}
               onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
-              className={`w-24 ${isDark ? 'accent-blue-500' : 'accent-blue-600'}`}
+              className={`w-24 ${isDark ? 'accent-blue-400' : 'accent-blue-900'}`}
             />
           </div>
         </div>

@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, SetStateAction, useMemo } from 'react';
 import { Moon, Sun, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FolderSelector } from './components/FolderSelector';
 import { SongList } from './components/SongList';
 import { Player } from './components/Player';
-import { PlaylistPanel } from './components/PlaylistPanel';
+import  PlaylistPanel  from './components/PlaylistPanel';
 import { useAudioPlayer } from './hooks/useAudioPlayer';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTheme } from './hooks/useTheme';
@@ -16,48 +16,48 @@ function App() {
   const [currentPlaylist, setCurrentPlaylist] = useState<string | null>(null);
   const { isDark, toggleTheme } = useTheme();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [currentFolder, setCurrentFolder] = useState<string | null>(null);
 
   const playedSongsRef = useRef<Set<string>>(new Set());
   const currentSongsRef = useRef<Song[]>([]);
   const isShuffleRef = useRef<boolean>(false);
   const playSongRef = useRef<(song: Song) => void>(() => {});
+  
 
   useEffect(() => {
-    currentSongsRef.current = currentPlaylist
-      ? songs.filter((song) =>
-          playlists.find((p) => p.id === currentPlaylist)?.songIds.includes(song.id)
-        )
-      : songs;
-  }, [songs, playlists, currentPlaylist]);
-
-  useEffect(() => {
-    isShuffleRef.current = isShuffle;
-  }, [isShuffle]);
+  currentSongsRef.current = currentPlaylist
+    ? songs.filter((song) =>
+        playlists.find((p) => p.id === currentPlaylist)?.songIds.includes(song.id)
+      )
+    : currentFolder
+    ? songs.filter((song) => (song.folder || 'Sin carpeta') === currentFolder)
+    : songs;
+}, [songs, playlists, currentPlaylist, currentFolder]);
 
   const handleNext = useCallback(() => {
-    const currentSongs = currentSongsRef.current;
-    if (!currentSongs.length) return;
+  const currentSongs = currentSongsRef.current;
+  if (!currentSongs.length) return;
 
-    if (isShuffleRef.current) {
-      const played = playedSongsRef.current;
-      if (played.size >= currentSongs.length) played.clear();
-      const remaining = currentSongs.filter((s) => !played.has(s.id));
-      if (remaining.length > 0) {
-        const randomSong = remaining[Math.floor(Math.random() * remaining.length)];
-        played.add(randomSong.id);
-        playSongRef.current(randomSong);
-      }
-      return;
+  if (isShuffleRef.current) {
+    const played = playedSongsRef.current;
+    if (played.size >= currentSongs.length) played.clear();
+    const remaining = currentSongs.filter((s) => !played.has(s.id));
+    if (remaining.length > 0) {
+      const randomSong = remaining[Math.floor(Math.random() * remaining.length)];
+      played.add(randomSong.id);
+      playSongRef.current(randomSong);
     }
+    return;
+  }
 
-    const currentId = (playSongRef.current as any)?._currentSongId ?? null;
-    const idx = currentSongs.findIndex((s) => s.id === currentId);
-    if (idx >= 0 && idx < currentSongs.length - 1) {
-      playSongRef.current(currentSongs[idx + 1]);
-    } else if (idx === -1 && currentSongs.length > 0) {
-      playSongRef.current(currentSongs[0]);
-    }
-  }, []);
+  const currentId = (playSongRef.current as any)?._currentSongId ?? null;
+  const idx = currentSongs.findIndex((s) => s.id === currentId);
+  if (idx >= 0 && idx < currentSongs.length - 1) {
+    playSongRef.current(currentSongs[idx + 1]);
+  } else if (idx === -1 && currentSongs.length > 0) {
+    playSongRef.current(currentSongs[0]);
+  }
+}, []);
 
   // ✅ USAR isLoop y toggleLoop del hook
   const {
@@ -78,12 +78,30 @@ function App() {
     playSongRef.current = playSong;
     (playSongRef.current as any)._currentSongId = currentSong?.id ?? null;
   }, [playSong, currentSong]);
+  
+  const folderGroups = useMemo(() => {
+    return songs.reduce((acc, song) => {
+      const folder = song.folder || 'Sin carpeta';
+      if (!acc[folder]) acc[folder] = [];
+      acc[folder].push(song);
+      return acc;
+    }, {} as Record<string, Song[]>);
+  }, [songs]);
 
-  const currentSongs = currentPlaylist
-    ? songs.filter((song) =>
-        playlists.find((p) => p.id === currentPlaylist)?.songIds.includes(song.id)
-      )
-    : songs;
+  const folderSongs = currentFolder ? folderGroups[currentFolder] || [] : songs;
+
+
+  const currentSongs = useMemo(() => {
+  if (currentFolder) {
+    return folderGroups[currentFolder] || [];
+  } else if (currentPlaylist) {
+    const playlist = playlists.find(p => p.id === currentPlaylist);
+    return playlist
+      ? songs.filter(song => playlist.songIds.includes(song.id))
+      : [];
+  }
+  return songs;
+}, [currentFolder, currentPlaylist, folderGroups, playlists, songs]);
 
   useEffect(() => {
     playedSongsRef.current.clear();
@@ -136,14 +154,16 @@ function App() {
   );
 
   const handlePrevious = useCallback(() => {
+    const currentSongs = currentSongsRef.current;
     const currentIndex = currentSongs.findIndex((s) => s.id === currentSong?.id);
     if (currentIndex > 0) {
-      playAndMark(currentSongs[currentIndex - 1]);
+      playSongRef.current(currentSongs[currentIndex - 1]);
     }
-  }, [currentSongs, currentSong, playAndMark]);
+  }, [currentSong]);
 
   const handleToggleShuffle = useCallback((enabled: boolean) => {
     setIsShuffle(enabled);
+    isShuffleRef.current = enabled;
     playedSongsRef.current.clear();
   }, []);
 
@@ -160,23 +180,6 @@ function App() {
     [setPlaylists]
   );
 
-  const handleRenamePlaylist = useCallback(
-    (playlistId: string, newName: string) => {
-      setPlaylists((prev) =>
-        prev.map((p) => (p.id === playlistId ? { ...p, name: newName } : p))
-      );
-    },
-    [setPlaylists]
-  );
-
-  const handleDeletePlaylist = useCallback(
-    (playlistId: string) => {
-      setPlaylists((prev) => prev.filter((p) => p.id !== playlistId));
-      if (currentPlaylist === playlistId) setCurrentPlaylist(null);
-    },
-    [setPlaylists, currentPlaylist]
-  );
-
   const handleAddToPlaylist = useCallback(
     (song: Song, playlistId: string) => {
       setPlaylists((prev) =>
@@ -190,25 +193,6 @@ function App() {
     },
     [setPlaylists]
   );
-
-  const handleRemoveSongFromPlaylist = useCallback(
-    (playlistId: string, songId: string) => {
-      setPlaylists((prev) =>
-        prev.map((p) =>
-          p.id === playlistId
-            ? { ...p, songIds: p.songIds.filter((id) => id !== songId) }
-            : p
-        )
-      );
-    },
-    [setPlaylists]
-  );
-
-  // ❌ ELIMINAR estas líneas - ya no las necesitas
-  // const [isLoop, setIsLoop] = useState(false);
-  // const handleToggleLoop = useCallback((enabled: boolean) => {
-  //   setIsLoop(enabled);
-  // }, []);
 
   useEffect(() => {
     document.title = currentSong
@@ -233,7 +217,7 @@ function App() {
           <div className="flex gap-5">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={`p-2 rounded-full shadow-md transition-all ${
+              className={`p-2 rounded-full shadow-md transition-colors ${
                 isDark
                   ? 'bg-gray-700 hover:bg-gray-600 text-gray-100'
                   : 'bg-white hover:bg-gray-100 text-gray-800'
@@ -269,7 +253,7 @@ function App() {
 
       <div className="flex-1 flex overflow-hidden relative">
         <aside
-          className={`w-80 p-3 overflow-y-auto h-[680px] border-1 transition-all duration-300 ${
+          className={`w-80 p-3 overflow-y-auto h-[680px] transition-colors border-1 ${
             isSidebarOpen ? 'opacity-100' : 'w-0 p-0 opacity-0'
           } ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}
         >
@@ -278,18 +262,25 @@ function App() {
               playlists={playlists}
               songs={songs}
               currentPlaylist={currentPlaylist}
+              currentFolder={currentFolder}
+              onSelectFolder={(folder: SetStateAction<string | null>) => {
+                setCurrentFolder(folder);
+                setCurrentPlaylist(null); // Limpiar playlist seleccionada
+              }}
+              onSelectPlaylist={(id: SetStateAction<string | null>) => {
+                setCurrentPlaylist(id);
+                setCurrentFolder(null); // Limpiar carpeta seleccionada
+              }}
               onCreatePlaylist={handleCreatePlaylist}
-              onSelectPlaylist={setCurrentPlaylist}
-              onRenamePlaylist={handleRenamePlaylist}
-              onDeletePlaylist={handleDeletePlaylist}
-              onRemoveSongFromPlaylist={handleRemoveSongFromPlaylist}
               isDark={isDark}
             />
           )}
         </aside>
 
         <main
-          className="flex-1 p-3 overflow-y-auto h-[680px] border-1 border-yellow-500 transition-colors"
+          className={`flex-1 p-3 overflow-y-auto h-[680px] border-1 border-yellow-500 transition-colors ${
+            isSidebarOpen ? 'opacity-100' : 'w-0 p-0 opacity-0'
+          } ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}
           style={{ paddingBottom: '' }}
         >
           <div
@@ -310,13 +301,13 @@ function App() {
               <span
                 className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
               >
-                {currentSongs.length}{' '}
-                {currentSongs.length === 1 ? 'canción' : 'canciones'}
+                {currentSongs.length} {currentSongs.length === 1 ? 'canción' : 'canciones'}
               </span>
             </div>
 
             <SongList
               songs={currentSongs}
+              currentFolder={currentFolder}
               currentSong={currentSong}
               onSongSelect={playAndMark}
               onAddToPlaylist={handleAddToPlaylist}
@@ -343,6 +334,7 @@ function App() {
           onToggleShuffle={handleToggleShuffle}
           isLoop={isLoop}           // ← Del hook
           onToggleLoop={toggleLoop} // ← Del hook
+          folderSongs={folderSongs} 
         />
       </div>
     </div>

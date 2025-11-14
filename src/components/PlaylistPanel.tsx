@@ -8,19 +8,49 @@ import {
   Home,
   User,
   Settings,
+  FolderOpen,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
-import { PlaylistPanelProps } from "../types";
 
-export const PlaylistPanel = ({
+// Tipos
+interface Song {
+  id: string;
+  name: string;
+  folder?: string;
+  cover?: string;
+}
+
+interface Playlist {
+  id: string;
+  name: string;
+  songIds: string[];
+}
+
+interface PlaylistPanelProps {
+  playlists: Playlist[];
+  songs: Song[];
+  currentPlaylist: string | null;
+  onCreatePlaylist: (name: string) => void;
+  onSelectPlaylist: (id: string | null) => void;
+  onSelectFolder?: (folder: string) => void;
+  currentFolder?: string | null;
+  isDark?: boolean;
+}
+
+export default function PlaylistPanel({
   playlists,
   songs,
   currentPlaylist,
   onCreatePlaylist,
   onSelectPlaylist,
-  isDark = false, // usar prop para decidir estilos
-}: PlaylistPanelProps) => {
+  onSelectFolder,
+  currentFolder,
+  isDark = false,
+}: PlaylistPanelProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [foldersExpanded, setFoldersExpanded] = useState(true);
 
   const handleCreate = () => {
     if (newPlaylistName.trim()) {
@@ -30,7 +60,19 @@ export const PlaylistPanel = ({
     }
   };
 
-  // helpers de clases para no repetir
+  // Agrupar canciones por carpeta
+  const folderGroups = songs.reduce((acc, song) => {
+    const folder = song.folder || "Sin carpeta";
+    if (!acc[folder]) {
+      acc[folder] = [];
+    }
+    acc[folder].push(song);
+    return acc;
+  }, {} as Record<string, Song[]>);
+
+  const folders = Object.entries(folderGroups).sort(([a], [b]) => a.localeCompare(b));
+
+  // helpers de clases
   const asideCls = `${
     isDark
       ? "bg-gray-900 text-gray-100 rounded-xl"
@@ -82,7 +124,7 @@ export const PlaylistPanel = ({
 
       {/* === (2) NAVEGACIÓN === */}
       <nav className={`flex flex-col gap-1 p-3 border-b ${isDark ? "border-gray-700" : "border-gray-300"} text-sm`}>
-        <button onClick={() => onSelectPlaylist(null)} className={navBtnBase(currentPlaylist === null)}>
+        <button onClick={() => onSelectPlaylist(null)} className={navBtnBase(currentPlaylist === null && !currentFolder)}>
           <Home size={16} />
           Inicio
         </button>
@@ -103,7 +145,39 @@ export const PlaylistPanel = ({
         </button>
       </nav>
 
-      {/* === (3) PLAYLISTS === */}
+      {/* === (3) CARPETAS === */}
+      {folders.length > 1 && onSelectFolder && (
+        <div className={`border-b ${isDark ? "border-gray-700" : "border-gray-300"} p-3`}>
+          <button
+            onClick={() => setFoldersExpanded(!foldersExpanded)}
+            className="flex items-center gap-2 text-xs font-semibold uppercase mb-2 opacity-70 w-full"
+          >
+            {foldersExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            Carpetas
+          </button>
+
+          {foldersExpanded && (
+            <div className="space-y-1">
+              {folders.map(([folder, folderSongs]) => (
+                <button
+                  key={folder}
+                  onClick={() => onSelectFolder(folder)}
+                  className={playlistBtnCls(currentFolder === folder)}
+                  title={folder}
+                >
+                  <div className="flex items-center gap-2">
+                    <FolderOpen size={14} />
+                    <span className="truncate flex-1">{folder}</span>
+                    <span className="opacity-60 text-xs">({folderSongs.length})</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* === (4) PLAYLISTS === */}
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         <h3 className="text-xs font-semibold uppercase mb-2 opacity-70">Tus playlists</h3>
 
@@ -148,34 +222,56 @@ export const PlaylistPanel = ({
         )}
       </div>
 
-      {/* === (4) PREVIEW DE PLAYLIST SELECCIONADA === */}
-      {currentPlaylist && (
+      {/* === (5) PREVIEW DE PLAYLIST/CARPETA SELECCIONADA === */}
+      {(currentPlaylist || currentFolder) && (
         <div className={`border-t p-3 text-sm ${isDark ? "border-gray-700" : "border-gray-300"}`}>
-          <h4 className="font-semibold mb-1">
-            {playlists.find((p) => p.id === currentPlaylist)?.name ?? "Playlist"}
-          </h4>
-          <p className="opacity-70 mb-2">
-            {playlists.find((p) => p.id === currentPlaylist)?.songIds.length ?? 0} canciones
-          </p>
-
-          <div className="max-h-24 overflow-y-auto space-y-1 text-xs">
-            {playlists
-              .find((p) => p.id === currentPlaylist)
-              ?.songIds.slice(0, 3)
-              .map((id) => {
-                const song = songs.find((s) => s.id === id);
-                if (!song) return null;
-                return (
-                  <div key={id} className={`${isDark ? "text-gray-200" : "text-gray-800"} truncate`}>
+          {currentFolder && (
+            <>
+              <h4 className="font-semibold mb-1 flex items-center gap-2">
+                <FolderOpen size={14} />
+                {currentFolder}
+              </h4>
+              <p className="opacity-70 mb-2">
+                {folderGroups[currentFolder]?.length ?? 0} canciones
+              </p>
+              <div className="max-h-24 overflow-y-auto space-y-1 text-xs">
+                {folderGroups[currentFolder]?.slice(0, 3).map((song) => (
+                  <div key={song.id} className={`${isDark ? "text-gray-200" : "text-gray-800"} truncate`}>
                     {song.name}
                   </div>
-                );
-              })}
-          </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {currentPlaylist && !currentFolder && (
+            <>
+              <h4 className="font-semibold mb-1">
+                {playlists.find((p) => p.id === currentPlaylist)?.name ?? "Playlist"}
+              </h4>
+              <p className="opacity-70 mb-2">
+                {playlists.find((p) => p.id === currentPlaylist)?.songIds.length ?? 0} canciones
+              </p>
+              <div className="max-h-24 overflow-y-auto space-y-1 text-xs">
+                {playlists
+                  .find((p) => p.id === currentPlaylist)
+                  ?.songIds.slice(0, 3)
+                  .map((id) => {
+                    const song = songs.find((s) => s.id === id);
+                    if (!song) return null;
+                    return (
+                      <div key={id} className={`${isDark ? "text-gray-200" : "text-gray-800"} truncate`}>
+                        {song.name}
+                      </div>
+                    );
+                  })}
+              </div>
+            </>
+          )}
         </div>
       )}
 
-      {/* === (5) FOOTER === */}
+      {/* === (6) FOOTER === */}
       <footer className={`border-t p-3 flex items-center justify-between text-sm ${isDark ? "border-gray-700" : "border-gray-300"}`}>
         <div className="flex items-center gap-2">
           <User size={16} />
@@ -187,4 +283,4 @@ export const PlaylistPanel = ({
       </footer>
     </aside>
   );
-};
+}

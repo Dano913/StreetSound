@@ -8,6 +8,7 @@ export interface Song {
   duration: number;
   cover?: string;
   src?: string;
+  folder: string;
 }
 
 export interface Playlist {
@@ -24,6 +25,7 @@ export interface ThemeContextType {
 
 export interface PlayerProps {
   currentSong: Song | null;
+  folderSongs?: Song[];
   isPlaying: boolean;
   currentTime: number;
   duration: number;
@@ -56,11 +58,12 @@ export interface PlaylistPanelProps {
   songs: Song[];
   currentPlaylist: string | null;
   onCreatePlaylist: (name: string) => void;
-  onSelectPlaylist: (playlistId: string | null) => void;
   onRenamePlaylist: (playlistId: string, newName: string) => void;
   onDeletePlaylist: (playlistId: string) => void;
   onRemoveSongFromPlaylist: (playlistId: string, songId: string) => void;
   isDark?: boolean;
+  onSelectPlaylist: (id: string | null) => void;
+  onSelectFolder?: (folder: string) => void;        // Carpeta actualmente seleccionada
 }
 
 export interface SongListProps {

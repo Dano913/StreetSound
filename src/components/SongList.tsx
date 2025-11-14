@@ -9,8 +9,9 @@ export const SongList = ({
   onAddToPlaylist,
   showAddButton = false,
   playlists = [],
+  currentFolder = null,
   isDark = false,
-}: SongListProps) => {
+}: SongListProps & { currentFolder?: string | null }) => {
   const formatDuration = (seconds: number) => {
     if (!seconds || isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
@@ -18,16 +19,24 @@ export const SongList = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  return (
-    <div className="space-y-2 border-q border-red-500 rounded-xl h-[585px] overflow-y-scroll overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+  const folderGroups = songs.reduce((acc, song) => {
+    const folder = song.folder || 'Sin carpeta';
+    if (!acc[folder]) acc[folder] = [];
+    acc[folder].push(song);
+    return acc;
+  }, {} as Record<string, typeof songs>);
 
-      {songs.length === 0 ? (
+  const displayedSongs = currentFolder ? folderGroups[currentFolder] || [] : songs;
+
+  return (
+    <div className="space-y-2 border-1 border-red-500 rounded-xl h-[585px] overflow-y-scroll overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {displayedSongs.length === 0 ? (
         <div className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
           <Music size={48} className={`mx-auto mb-2 ${isDark ? 'text-gray-600' : 'text-gray-400'} opacity-50`} />
           <p>No hay canciones cargadas</p>
         </div>
       ) : (
-        songs.map((song) => (
+        displayedSongs.map((song) => (
           <div key={song.id}>
             <div
               className={`flex items-center justify-between p-3 rounded-lg transition-colors cursor-pointer ${
