@@ -8,46 +8,65 @@ import {                                                       // Iconos
   Volume2, VolumeX, 
   Shuffle, Repeat } from 'lucide-react';
 
-export const Player = ({
-  currentSong,
-  isPlaying,
-  currentTime,
-  duration,
-  volume,
-  onPlayPause,
-  onSeek,
-  onVolumeChange,
-  onNext,
-  onPrevious,
-  onToggleShuffle,
-  onToggleLoop,
-  isLoop,
+export const Player = ({    // Props del componente
+  currentSong,                 // Canción actualmente seleccionada/reproduciendo
+  isPlaying,                   // Booleano para indicar si la cancion se reproduce o no
+  currentTime,                 // El tiempo actual del audio
+  duration,                    // Duración total de la canción actual
+  volume,                      // Volumen actual del reproductor
+  onPlayPause,                 // Función que alterna entre play y pause.
+  onSeek,                      // Cambia el tiempo actual del audio cuando interacciono con la barra de progreso
+  onVolumeChange,              // Ajusta el volumen cuando utilizo el slider de volumen
+  onNext,                      // Función para ir a la siguiente canción
+  onPrevious,                  // Función para ir a la canción previa
+  onToggleShuffle,             // Función que activa o desactiva el modo aleatorio
+  onToggleLoop,                // Función que cambia el estado de repetir canción
+  isLoop,                      // Indica si est activado el modo repetir canción
 }: PlayerProps) => {
-  const { isDark } = useTheme();
-  const [isShuffling, setIsShuffling] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { isDark } = useTheme();                             // Valor booleano que indica si el tema es oscuro
+  const [isShuffling, setIsShuffling] = useState(false);     // Estado local que controla si el modo aleatorio esta activado o no y la funcion que lo cambia
+  const audioRef = useRef<HTMLAudioElement | null>(null);    // Una referencia al elemento <audio> que crea useAudioElement
 
-  // Configurar loop cuando cambie isLoop o cuando se monte/actualice el audio
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.loop = isLoop || false;
-      console.log('Loop configurado:', isLoop);
+  // Hook que controla el cambio del estado loop. Si se cambia de canción tambien se ejecuta, para que la siguiente canción se repita.
+  useEffect(() => {             // Hook que se ejecuta después de renderizarse el componente
+    if (audioRef.current) {     // Verifica si hay audio cargado
+      audioRef.current.loop = isLoop || false;  // isLoop le indica si se ha activado el modo repetir
     }
-  }, [isLoop, currentSong]);
+  }, [isLoop, currentSong]);  // Si uno de estos parámetros cambia se ejecuta
 
-  useAudioElement({ audioRef, currentSong, isPlaying, volume, onNext, onSeek, isLoop });
+  // Hook que controla el audio y le pasa sus poderes a player
+  // onPrevious, onToggleShuffle se maneja desde UI
+  useAudioElement({ 
+    audioRef,         // Elemento real de audio
+    currentSong,      // Canción actual
+    isPlaying,        // Booleano de si se esta reproduciendo algo
+    volume,           // Volumen
+    onNext,           // Avisa de que hay q cambiar de cancion cuando se termina pero no sabe cual es la siguiente
+    onSeek,           // Parte de la canción
+    isLoop });        // Repeticion
 
-  const toggleShuffle = () => {
-    const newState = !isShuffling;
+  const toggleShuffle = () => {     // Se encarga de gestionar el cambio
+    const newState = !isShuffling;  // Si no esta activado lo activa y viceversa
     setIsShuffling(newState);
-    onToggleShuffle?.(newState);
+    onToggleShuffle?.(newState);    // Avisa al padre mediante el useState
   };
 
   const toggleLoop = () => {
+  // Esta función se ejecuta cuando el usuario pulsa el botón de "repetir".
+  // El Player NO controla el estado real del loop; solo avisa al componente padre.
+
     if (onToggleLoop) {
+      // Llamamos a la función que nos pasó el componente padre.
+      // Esa función realmente es la encargada de modificar el estado isLoop
+      // dentro del hook useAudioPlayer (donde vive el setIsLoop real).
+
       onToggleLoop(!isLoop);
+      // Le enviamos el valor contrario al actual:
+      // - si isLoop era false (modo repetir apagado), lo ponemos en true.
+      // - si isLoop era true, lo apagamos.
     }
   };
+
 
   const formatTime = (seconds: number) => {
     if (!seconds || isNaN(seconds)) return '0:00';
@@ -57,6 +76,7 @@ export const Player = ({
   };
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  // Calcula el porcentaje de progreso de la cancion para reflejarlo en la barra
 
   return (
     <div
