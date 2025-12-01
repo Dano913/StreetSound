@@ -74,4 +74,5 @@ export interface SongListProps {
   showAddButton?: boolean;
   playlists?: Playlist[];
   isDark?: boolean;
+  currentFolder?: string | null;
 }

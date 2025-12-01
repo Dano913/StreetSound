@@ -1,8 +1,12 @@
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat } from 'lucide-react';
-import { PlayerProps } from '../types';
-import { useTheme } from '../hooks/useTheme';
-import { useState, useRef, useEffect } from 'react';
-import { useAudioElement } from '../hooks/useAudioElement';
+import { useState, useRef, useEffect } from 'react';           // Hooks nativos
+import { useAudioElement } from '../hooks/useAudioElement';    // Hook
+import { useTheme } from '../hooks/useTheme';                  // Hook
+import { PlayerProps } from '../types';                        // Props
+import {                                                       // Iconos
+  Play, Pause, 
+  SkipBack, SkipForward, 
+  Volume2, VolumeX, 
+  Shuffle, Repeat } from 'lucide-react';
 
 export const Player = ({
   currentSong,
