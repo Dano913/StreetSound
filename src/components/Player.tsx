@@ -87,7 +87,7 @@ export const Player = ({    // Props del componente
     >
       <div className="w-auto mx-auto flex h-[150px] items-center gap-1 border-1 border-green-500 px-1">
         <div className="border-1 border-blue-500 w-[20%] h-[140px] flex justify-center items-center">
-        {currentSong?.cover && (
+        {currentSong?.cover && ( // Muestra la cover de la cancion si existe
           <div className="w-[130px] h-[130px] rounded-lg overflow-hidden shadow-md">
             <img
               src={currentSong.cover?.startsWith('/src/assets/')
@@ -102,44 +102,49 @@ export const Player = ({    // Props del componente
         <div className="w-[60%] h-[140px] border-1 border-red-500 items-center justify-center flex flex-col gap-3">
           <div className="text-center border-1 border-yellow-500 w-[90%] flex justify-center">
             <p
-              className={`text-xl font-semibold truncate w-[1000px] border-1 border-purple-500 ${
-                isDark ? 'text-gray-100' : 'text-gray-800'
-              }`}
+              className={`
+                text-xl font-semibold truncate w-[1000px] border-1 border-purple-500 
+                ${isDark ? 'text-gray-100' : 'text-gray-800'}
+              `}
             >
-              {currentSong
+              {currentSong // Indica el nombre de la actual cancion
                 ? currentSong.name.replace(/\.mp3$/i, '')
-                : 'Sin canción seleccionada'}
+                : 'Sin canción seleccionada'
+              }
             </p>
           </div>
           <div
-            className={`border-1 border-red-500 w-[90%] flex items-center gap-2 text-xs ${
-              isDark ? 'text-gray-400' : 'text-gray-600'
-            }`}
-          >
-            <span>{formatTime(currentTime)}</span>
+            className={`
+              border-1 border-red-500 w-[90%] flex items-center gap-2 text-xs 
+              ${isDark ? 'text-gray-400' : 'text-gray-600'}
+            `}
+          > 
+            <span>{formatTime(currentTime)}</span> 
             <div
-              className={`flex-1 h-2 rounded-full cursor-pointer transition-colors ${
-                isDark ? 'bg-gray-700' : 'bg-gray-200'
-              }`}
+              className={`
+                flex-1 h-2 rounded-full cursor-pointer transition-colors 
+                ${isDark ? 'bg-gray-700' : 'bg-gray-200'}
+              `}
               onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const percentage = x / rect.width;
-                onSeek(percentage * duration);
+                const rect = e.currentTarget.getBoundingClientRect(); // Obtiene donde empieza la barra y cuantos pixeles mide
+                const x = e.clientX - rect.left;     // Es la posicion del mouse menos el inicio de la barra, obtenemos la posicion dentro de la barra
+                const percentage = x / rect.width;   // Convierte esa posicion a % dividiendo por el ancho total
+                onSeek(percentage * duration);       // Multiplica por duracion para convertir el % a secs y asi saber a q segundo de la cancion corresponde ese porcentaje
               }}
             >
-              <div
-                className={`h-full rounded-full transition-colors ${
-                  isDark ? 'bg-blue-500' : 'bg-blue-600'
-                }`}
+              <div // Barra de progreso de la cancion
+                className={`
+                  h-full rounded-full transition-colors 
+                  ${isDark ? 'bg-blue-500' : 'bg-blue-600'}
+                `}
                 style={{ width: `${progress}%` }}
               />
             </div>
             <span>{formatTime(duration)}</span>
           </div>
           <div className="flex items-center justify-center gap-10 h-[40px] w-[90%] border-1 border-green-500">
-            <button
-              onClick={toggleShuffle}
+            <button                   // Boton de aleatorio
+              onClick={toggleShuffle} // El click ejecuta la funcion que tenemos arriba
               className={`p-2 rounded-full transition-colors ${
                 isShuffling
                   ? isDark
@@ -162,16 +167,16 @@ export const Player = ({    // Props del componente
                 }
               />
             </button>
-            <button
-              onClick={onPrevious}
+            <button                         // Boton de cancion anterior
+              onClick={onPrevious}          // Funcion manejada directamente desde App
               className={`p-1 rounded-full transition-colors ${
                 isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
               }`}
             >
               <SkipBack size={20} className={isDark ? 'text-gray-100' : 'text-gray-800'} />
             </button>
-            <button
-              onClick={onPlayPause}
+            <button                        // Boton de pausar o reanudar
+              onClick={onPlayPause}        // Funcion manejada desde hook useAdioPlayer
               disabled={!currentSong}
               className={`relative flex items-center justify-center w-12 h-12 rounded-full text-white transition-colors duration-200
                 ${isPlaying ? 'scale-60' : 'scale-60'}
@@ -187,16 +192,16 @@ export const Player = ({    // Props del componente
                 />
               )}
             </button>
-            <button
-              onClick={onNext}
+            <button                // Boton de siguiente cancion
+              onClick={onNext}     // Funcion manejada directamente desde App
               className={`p-1 rounded-full transition-colors ${
                 isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
               }`}
             >
               <SkipForward size={20} className={isDark ? 'text-gray-100' : 'text-gray-800'} />
             </button>
-            <button
-              onClick={toggleLoop}
+            <button                    // Boton de repetir
+              onClick={toggleLoop}     // El click ejecuta la funcion que tenemos arriba
               className={`p-2 rounded-full transition-colors ${
                 isLoop
                   ? isDark
@@ -214,25 +219,27 @@ export const Player = ({    // Props del componente
         </div>
         <div className="flex items-center justify-center w-[20%] h-[140px] border-1 border-blue-500">
           <div className="flex items-center gap-2">
-            <button
+            <button                // Boton de silenciar o activar sonido
               onClick={() => onVolumeChange(volume > 0 ? 0 : 1)}
+              // Funcion que se maneja desde hook useAudioPlayer
               className={`p-2 rounded-full transition-colors ${
                 isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
               }`}
             >
-              {volume === 0 ? (
+              {volume === 0 ? (    
                 <VolumeX size={20} className={isDark ? 'text-gray-100' : 'text-gray-800'} />
               ) : (
                 <Volume2 size={20} className={isDark ? 'text-gray-100' : 'text-gray-800'} />
               )}
             </button>
-            <input
+            <input                // Barra de volumen
               type="range"
               min="0"
               max="1"
               step="0.01"
               value={volume}
               onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
+              // Funcion que se maneja desde hook useAudioPlayer
               className={`w-24 ${isDark ? 'accent-blue-400' : 'accent-blue-900'}`}
             />
           </div>

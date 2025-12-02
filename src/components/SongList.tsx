@@ -113,7 +113,7 @@ export const SongList = ({      // El componente recibe props
                       >
                         <div className="text-sm font-medium truncate">{playlist.name}</div>
                         <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {playlist.songIds.length} canciones
+                          {playlist.songIds.length}
                         </div>
                       </button>
                     ))}

@@ -35,29 +35,29 @@ function App() {
 }, [songs, playlists, currentPlaylist, currentFolder]);
 
   const handleNext = useCallback(() => {
-  const currentSongs = currentSongsRef.current;
-  if (!currentSongs.length) return;
+    const currentSongs = currentSongsRef.current;
+    if (!currentSongs.length) return;
 
-  if (isShuffleRef.current) {
-    const played = playedSongsRef.current;
-    if (played.size >= currentSongs.length) played.clear();
-    const remaining = currentSongs.filter((s) => !played.has(s.id));
-    if (remaining.length > 0) {
-      const randomSong = remaining[Math.floor(Math.random() * remaining.length)];
-      played.add(randomSong.id);
-      playSongRef.current(randomSong);
+    if (isShuffleRef.current) {
+      const played = playedSongsRef.current;
+      if (played.size >= currentSongs.length) played.clear();
+      const remaining = currentSongs.filter((s) => !played.has(s.id));
+      if (remaining.length > 0) {
+        const randomSong = remaining[Math.floor(Math.random() * remaining.length)];
+        played.add(randomSong.id);
+        playSongRef.current(randomSong);
+      }
+      return;
     }
-    return;
-  }
 
-  const currentId = (playSongRef.current as any)?._currentSongId ?? null;
-  const idx = currentSongs.findIndex((s) => s.id === currentId);
-  if (idx >= 0 && idx < currentSongs.length - 1) {
-    playSongRef.current(currentSongs[idx + 1]);
-  } else if (idx === -1 && currentSongs.length > 0) {
-    playSongRef.current(currentSongs[0]);
-  }
-}, []);
+    const currentId = (playSongRef.current as any)?._currentSongId ?? null;
+    const idx = currentSongs.findIndex((s) => s.id === currentId);
+    if (idx >= 0 && idx < currentSongs.length - 1) {
+      playSongRef.current(currentSongs[idx + 1]);
+    } else if (idx === -1 && currentSongs.length > 0) {
+      playSongRef.current(currentSongs[0]);
+    }
+  }, []);
 
   // ✅ USAR isLoop y toggleLoop del hook
   const {
@@ -251,11 +251,11 @@ function App() {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex flex-1 overflow-hidden">
         <aside
-          className={`w-80 p-3 overflow-y-auto h-[680px] transition-colors border-1 ${
-            isSidebarOpen ? 'opacity-100' : 'w-0 p-0 opacity-0'
-          } ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}
+          className={`transition-colors ${
+            isSidebarOpen ? 'w-80 p-3' : 'w-0 p-0'
+          } overflow-y-auto h-[680px] ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}
         >
           {isSidebarOpen && (
             <PlaylistPanel
@@ -265,11 +265,11 @@ function App() {
               currentFolder={currentFolder}
               onSelectFolder={(folder: SetStateAction<string | null>) => {
                 setCurrentFolder(folder);
-                setCurrentPlaylist(null); // Limpiar playlist seleccionada
+                setCurrentPlaylist(null);
               }}
               onSelectPlaylist={(id: SetStateAction<string | null>) => {
                 setCurrentPlaylist(id);
-                setCurrentFolder(null); // Limpiar carpeta seleccionada
+                setCurrentFolder(null);
               }}
               onCreatePlaylist={handleCreatePlaylist}
               isDark={isDark}
@@ -279,9 +279,8 @@ function App() {
 
         <main
           className={`flex-1 p-3 overflow-y-auto h-[680px] border-1 border-yellow-500 transition-colors ${
-            isSidebarOpen ? 'opacity-100' : 'w-0 p-0 opacity-0'
-          } ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}
-          style={{ paddingBottom: '' }}
+            isDark ? 'bg-gray-800' : 'bg-gray-50'
+          }`}
         >
           <div
             className={`h-[100%] border-1 border-green-500 rounded-xl overflow-hidden shadow-lg p-3 transition-colors ${
