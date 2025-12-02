@@ -80,9 +80,10 @@ export const Player = ({    // Props del componente
 
   return (
     <div
-      className={`border-1 border-red-500 shadow-lg transition-colors ${
-        isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'
-      }`}
+      className={`
+        border-1 border-red-500 shadow-lg transition-colors 
+        ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'}
+      `}
     >
       <div className="w-auto mx-auto flex h-[150px] items-center gap-1 border-1 border-green-500 px-1">
         <div className="border-1 border-blue-500 w-[20%] h-[140px] flex justify-center items-center">
